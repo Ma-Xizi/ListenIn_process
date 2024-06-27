@@ -3,6 +3,7 @@ import os
 from extract_frames import extract_frames
 from model import get_video_summary
 from gtts import gTTS
+from moviepy.editor import VideoFileClip, AudioFileClip
 
 # Function to ensure directory exists
 def ensure_directory_exists(directory):
@@ -15,6 +16,16 @@ def text_to_audio(text, audio_filename):
     ensure_directory_exists(os.path.dirname(audio_filename))  # Ensure directory exists
     tts.save(audio_filename)
 
+# Function to add audio to video using moviepy
+def add_audio_to_video(video_path, audio_path, output_path):
+    ensure_directory_exists(os.path.dirname(output_path))  # Ensure directory exists
+    video = VideoFileClip(video_path)
+    audio = AudioFileClip(audio_path)
+    video = video.set_audio(audio)
+    video.write_videofile(output_path, codec='libx264', audio_codec='aac')
+    audio.close()
+    video.close()
+
 # Set up Streamlit
 st.title("Video Summary Generator")
 st.write("Upload a video file and get a summary of its content.")
@@ -22,9 +33,10 @@ st.write("Upload a video file and get a summary of its content.")
 # File uploader
 uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "mov", "avi", "mkv"])
 
-# Directory to save frames and audio
+# Directory to save frames, audio, and output video
 frames_directory = "uploaded_frames"
 audio_directory = "uploaded_audio"
+output_directory = "output_videos"
 
 if uploaded_file is not None:
     # Save the uploaded video to a temporary file
@@ -49,9 +61,12 @@ if uploaded_file is not None:
         audio_filename = os.path.join(audio_directory, "summary_audio.mp3")
         text_to_audio(video_summary, audio_filename)
 
-        # Display audio with a text caption
-        st.write("Summary Audio")
-        st.audio(audio_filename, format='audio/mp3')
+        # Add audio to the original video
+        output_video_path = os.path.join(output_directory, "video_with_summary.mp4")
+        add_audio_to_video(temp_video_path, audio_filename, output_video_path)
+
+        # Display video with summary audio
+        st.video(output_video_path)
 
     except ValueError as e:
         st.error(f"An error occurred: {e}")
