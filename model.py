@@ -3,6 +3,7 @@ import base64
 import os
 from typing import List
 from extract_frames import extract_frames
+from gtts import gTTS
 
 llm = ChatOpenAI(
     temperature=0,
@@ -60,7 +61,7 @@ def get_image_information(image_path: str) -> str:
 def generate_summary(descriptions: List[str]) -> str:
     llm = ChatOpenAI(temperature=0.5, max_tokens=1024, model="gpt-4o", api_key="API-KEY")
     combined_descriptions = " ".join(descriptions)
-    summary_prompt = f"Summarize the following descriptions into a coherent summary:\n\n{combined_descriptions}"
+    summary_prompt = f"The following descriptions are for video frames, summarize into a coherent summary of the video:\n\n{combined_descriptions}"
     summary_message = llm.invoke(summary_prompt)
     return summary_message.content if summary_message else ""
 
@@ -70,9 +71,23 @@ def get_video_summary(video_path: str, frames_directory: str) -> str:
     descriptions = [get_image_information(frame) for frame in frame_files]
     return generate_summary(descriptions)
 
+def generate_audio_from_text(text: str, audio_file_path: str):
+    tts = gTTS(text=text, lang='en')
+    tts.save(audio_file_path)
+
 # Example usage
 try:
     video_summary = get_video_summary("my_video.MOV", "my_frames")
     print(video_summary)
+
+    # Generate audio from the summary
+    audio_file_path = "summary_audio.mp3"
+    generate_audio_from_text(video_summary, audio_file_path)
+
+    # Add the generated audio back to the video
+    # Replace this with your method to add audio to video (e.g., using MoviePy)
+    # Example:
+    # add_audio_to_video("my_video.MOV", audio_file_path, "video_with_audio.MOV")
+
 except ValueError as e:
     print(e)
