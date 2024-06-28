@@ -11,7 +11,11 @@ llm = ChatOpenAI(
     max_tokens=None,
     timeout=None,
     max_retries=2,
+<<<<<<< Updated upstream
     api_key="API-KEY",
+=======
+    api_key="sk-proj-jJoV4a8oML8LI3OXVtUhT3BlbkFJucvjuL4Fm0YtvLxhVV0m",  # if you prefer to pass api key in directly instaed of using env vars
+>>>>>>> Stashed changes
 )
 
 print(llm.invoke("Good mo"))
@@ -42,6 +46,7 @@ load_image_chain = TransformChain(
 globals.set_debug(True)
 
 @chain
+<<<<<<< Updated upstream
 def image_model(inputs: dict) -> str:
     model = ChatOpenAI(temperature=0.5, max_tokens=1024, model="gpt-4o", api_key="API-KEY")
     msg = model.invoke(
@@ -52,6 +57,19 @@ def image_model(inputs: dict) -> str:
             ])]
     )
     return msg.content if msg else ""
+=======
+def image_model(inputs: dict) -> str | list[str] | dict:
+ """Invoke model with image and prompt."""
+ model = ChatOpenAI(temperature=0.5, max_tokens=1024, model="gpt-4o",api_key="sk-proj-jJoV4a8oML8LI3OXVtUhT3BlbkFJucvjuL4Fm0YtvLxhVV0m")
+ msg = model.invoke(
+             [HumanMessage(
+             content=[
+             {"type": "text", "text": inputs["prompt"]},
+             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{inputs['image']}"}},
+             ])]
+             )
+ return msg.content
+>>>>>>> Stashed changes
 
 def get_image_information(image_path: str) -> str:
     vision_prompt = "Describe the image you see"
@@ -66,6 +84,7 @@ def generate_summary(descriptions: List[str]) -> str:
     summary_message = llm.invoke(summary_prompt)
     return summary_message.content if summary_message else ""
 
+<<<<<<< Updated upstream
 def get_video_summary(video_path: str, frames_directory: str) -> str:
     extract_frames(video_path, frames_directory, frame_interval=2)
     frame_files = [os.path.join(frames_directory, f) for f in os.listdir(frames_directory) if f.endswith('.jpg')]
@@ -92,3 +111,6 @@ try:
 
 except ValueError as e:
     print(e)
+=======
+get_image_information("/Users/mw/Documents/GitHub/SignSage/my_frames/timestamp_0.00.jpg")
+>>>>>>> Stashed changes
