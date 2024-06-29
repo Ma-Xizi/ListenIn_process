@@ -1,28 +1,20 @@
 import streamlit as st
 import os
-from extract_frames import extract_frames
-from model import get_video_summary
 from gtts import gTTS
-from moviepy.editor import VideoFileClip, AudioFileClip
-
-# Function to ensure directory exists
-def ensure_directory_exists(directory):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+from moviepy.editor import VideoFileClip, concatenate_videoclips, AudioFileClip
+from model import get_video_summary, extract_audio_from_video, process_video_part  # Assuming model.py is in the same directory
 
 # Function to convert text to audio using gTTS
 def text_to_audio(text, audio_filename):
     tts = gTTS(text=text, lang='en')
-    ensure_directory_exists(os.path.dirname(audio_filename))  # Ensure directory exists
     tts.save(audio_filename)
 
 # Function to add audio to video using moviepy
 def add_audio_to_video(video_path, audio_path, output_path):
-    ensure_directory_exists(os.path.dirname(output_path))  # Ensure directory exists
     video = VideoFileClip(video_path)
     audio = AudioFileClip(audio_path)
     video = video.set_audio(audio)
-    video.write_videofile(output_path, codec='libx264', audio_codec='aac')
+    video.write_videofile(output_path, codec='libx264', audio_codec='aac', threads=4)  # Utilize multiple threads for faster processing
     audio.close()
     video.close()
 
@@ -38,6 +30,11 @@ frames_directory = "uploaded_frames"
 audio_directory = "uploaded_audio"
 output_directory = "output_videos"
 
+# Ensure directories exist
+os.makedirs(frames_directory, exist_ok=True)
+os.makedirs(audio_directory, exist_ok=True)
+os.makedirs(output_directory, exist_ok=True)
+
 if uploaded_file is not None:
     # Save the uploaded video to a temporary file
     temp_video_path = os.path.join("temp", uploaded_file.name)
@@ -50,10 +47,11 @@ if uploaded_file is not None:
     
     st.write(f"Uploaded {uploaded_file.name}")
 
-    # Extract frames and generate summary
     try:
         with st.spinner("Extracting frames and generating summary..."):
+            # Generate video summary
             video_summary = get_video_summary(temp_video_path, frames_directory)
+        
         st.success("Summary generated!")
         st.write(video_summary)
 
@@ -68,16 +66,18 @@ if uploaded_file is not None:
         # Display video with summary audio
         st.video(output_video_path)
 
-    except ValueError as e:
-        st.error(f"An error occurred: {e}")
+        # Clean up temporary files (optional)
+        if os.path.exists(temp_video_path):
+            os.remove(temp_video_path)
 
-    # Clean up temporary files
-    if os.path.exists(temp_video_path):
-        os.remove(temp_video_path)
-    for file in os.listdir(frames_directory):
-        os.remove(os.path.join(frames_directory, file))
-    if os.path.exists(audio_filename):
-        os.remove(audio_filename)
+        for file in os.listdir(frames_directory):
+            os.remove(os.path.join(frames_directory, file))
+        
+        if os.path.exists(audio_filename):
+            os.remove(audio_filename)
+
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
 
 else:
     st.write("Please upload a video file.")
