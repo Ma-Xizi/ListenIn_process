@@ -2,7 +2,6 @@ import cv2
 import os
 
 def extract_frames(path_to_video, frames_directory, frame_interval=2, video_name="video"):
-    
     cap = cv2.VideoCapture(path_to_video)
 
     if not cap.isOpened():

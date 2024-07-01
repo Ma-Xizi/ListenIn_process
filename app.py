@@ -66,7 +66,7 @@ if uploaded_file is not None:
         # Display video with summary audio
         st.video(output_video_path)
 
-        # Clean up temporary files (optional)
+        # Clean up temporary files 
         if os.path.exists(temp_video_path):
             os.remove(temp_video_path)
 
