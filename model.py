@@ -11,7 +11,7 @@ llm = ChatOpenAI(
     max_tokens=None,
     timeout=None,
     max_retries=2,
-    api_key="API-KEY",
+    api_key="sk-proj-jJoV4a8oML8LI3OXVtUhT3BlbkFJucvjuL4Fm0YtvLxhVV0m",
 )
 
 print(llm.invoke("Good mo"))
@@ -43,7 +43,7 @@ globals.set_debug(True)
 
 @chain
 def image_model(inputs: dict) -> str:
-    model = ChatOpenAI(temperature=0.5, max_tokens=1024, model="gpt-4o", api_key="API-KEY")
+    model = ChatOpenAI(temperature=0.5, max_tokens=1024, model="gpt-4o", api_key="sk-proj-jJoV4a8oML8LI3OXVtUhT3BlbkFJucvjuL4Fm0YtvLxhVV0m")
     msg = model.invoke(
         [HumanMessage(
             content=[
