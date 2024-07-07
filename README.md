@@ -1,6 +1,3 @@
-Sure, here's a short README for your project:
-
----
 
 # listenIn: Enhancing Video Accessibility for the Visually Impaired
 
