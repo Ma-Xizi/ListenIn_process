@@ -4,8 +4,21 @@ import os
 from typing import List
 from extract_frames import extract_frames
 from gtts import gTTS
+import speech_recognition as sr
+from moviepy.editor import VideoFileClip, concatenate_videoclips
+from langchain.chains import TransformChain
+from langchain_core.messages import HumanMessage
+from langchain_core.runnables import chain
+from langchain_openai import ChatOpenAI
+import base64
+import logging
 
+API_KEY = "APIMY"
 
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Set up ChatOpenAI LLM
 llm = ChatOpenAI(
     temperature=0,
     max_tokens=None,
@@ -91,26 +104,45 @@ def get_video_summary(video_path: str, frames_directory: str) -> str:
     descriptions = [get_image_information(frame) for frame in frame_files]
     return generate_summary(descriptions)
 
-def generate_audio_from_text(text: str, audio_file_path: str):
-    tts = gTTS(text=text, lang='en')
-    tts.save(audio_file_path)
+def process_video(video_path: str, num_parts: int = 3) -> str:
+    video = VideoFileClip(video_path)
+    video_duration = int(video.duration)
+    
+    # Calculate the duration for each part
+    part_duration = video_duration / num_parts
+    
+    video_parts = []
+    for i in range(num_parts):
+        start_time = i * part_duration
+        end_time = min((i + 1) * part_duration, video_duration)  # Ensure end_time does not exceed video duration
+        part_path = f"part_{start_time:.2f}_{end_time:.2f}.mp4"  # Use float formatting for part path
+        try:
+            video_part = video.subclip(start_time, end_time)
+            video_part.write_videofile(part_path)
+            video_parts.append((part_path, start_time, end_time))  # Store start and end times
+        except Exception as e:
+            logging.error(f"Error processing video part from {start_time} to {end_time}: {e}")
+            continue
+    
+    frames_directory = "frames"
+    summaries = [process_video_part(part[0], frames_directory, part[1], part[2], i) for i, part in enumerate(video_parts)]
+    combined_summary = "\n\n".join([summary for summary in summaries if summary])  # Combine non-empty summaries
+    
+    # Combine video parts back into a single video
+    processed_clips = []
+    for part, start_time, end_time in video_parts:
+        try:
+            processed_clip = VideoFileClip(part)
+            processed_clips.append(processed_clip)
+        except Exception as e:
+            logging.error(f"Error loading video part {part}: {e}")
+            continue
+    
+    final_video = concatenate_videoclips(processed_clips)
+    final_video_path = "final_video_with_summary.mp4"
+    final_video.write_videofile(final_video_path, codec='libx264', audio_codec='aac')
+    
+    return combined_summary
 
-# Example usage
-try:
-    video_summary = get_video_summary("my_video.MOV", "my_frames")
-    print(video_summary)
-
-    # Generate audio from the summary
-    audio_file_path = "summary_audio.mp3"
-    generate_audio_from_text(video_summary, audio_file_path)
-
-    # Add the generated audio back to the video
-    # Replace this with your method to add audio to video (e.g., using MoviePy)
-    # Example:
-    # add_audio_to_video("my_video.MOV", audio_file_path, "video_with_audio.MOV")
-
-except ValueError as e:
-    print(e)
-=======
-get_image_information("/Users/mw/Documents/GitHub/SignSage/my_frames/timestamp_0.00.jpg")
->>>>>>> Stashed changes
+def get_video_summary(video_path: str, frames_directory: str) -> str:
+    return process_video(video_path, num_parts=3)
